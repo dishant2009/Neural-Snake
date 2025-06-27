@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Snake - Advanced AI Learning</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; min-height: 100vh; }
+        .main-container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; font-weight: 300; letter-spacing: 3px; color: #4CAF50; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        .game-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .left-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .game-container { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .game-title { font-size: 1.1em; margin-bottom: 10px; color: #4CAF50; }
+        canvas { background: #111; border: 1px solid #333; display: block; margin: 0 auto; }
+        .info-panel { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        button { background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1em; transition: all 0.3s ease; }
+        button:hover { background: #45a049; transform: translateY(-2px); }
+        button:disabled { background: #333; cursor: not-allowed; transform: none; }
+        .metric { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .metric-label { font-size: 0.9em; color: #888; margin-bottom: 5px; }
+        .metric-value { font-size: 1.8em; font-weight: 600; color: #4CAF50; }
+        .ai-thoughts { background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px; font-size: 0.9em; line-height: 1.6; }
+        .decision-display { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .decision-box { background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 4px; text-align: center; border: 1px solid transparent; transition: all 0.2s ease; }
+        .decision-box.active { background: rgba(76, 175, 80, 0.3); border: 1px solid #4CAF50; }
+        .speed-control { display: flex; align-items: center; gap: 15px; justify-content: center; margin-bottom: 20px; }
+        input[type="range"] { width: 200px; }
+        .comparison-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .stage-box { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; text-align: center; border: 2px solid transparent; transition: border-color 0.5s ease; }
+        .stage-box.active-stage { border-color: #4CAF50; }
+        .stage-box h4 { color: #4CAF50; margin-bottom: 10px; }
+        .legend { display: flex; gap: 15px; justify-content: center; margin-top: 10px; font-size: 0.8em; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-color { width: 15px; height: 10px; border-radius: 2px; }
+        .neural-view { margin-top: 15px; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; }
+        .neural-view canvas { width: 100%; height: 120px; }
+        @media (max-width: 1200px) {
+            .game-grid { grid-template-columns: 1fr; }
+            .left-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>NEURAL NETWORK LEARNING VISUALIZED</h1>
+        <p class="subtitle">Watch how AI learns to play Snake through evolution and neural networks</p>
+        <div class="controls">
+            <button id="startBtn">Start Learning</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="resetBtn">Reset</button>
+            <button id="skipBtn">Skip Generation</button>
+        </div>
+        <div class="speed-control">
+            <label>Speed (FPS):</label>
+            <input type="range" id="speedSlider" min="1" max="60" value="30">
+            <span id="speedValue">30</span>
+        </div>
+        <div class="game-grid">
+            <div class="left-panel">
+                <div class="game-container">
+                    <h3 class="game-title">Best Snake (What AI Sees)</h3>
+                    <canvas id="bestCanvas" width="300" height="300"></canvas>
+                    <div class="legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #FF5252;"></div><span>Food</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #4CAF50;"></div><span>Snake</span></div>
+                        <div class="legend-item"><div class="legend-color" style="border: 1px solid rgba(255, 82, 82, 0.8);"></div><span>Food Ray</span></div>
+                        <div class="legend-item"><div class="legend-color" style="border: 1px solid rgba(255, 255, 0, 0.5);"></div><span>Body Ray</span></div>
+                        <div class="legend-item"><div class="legend-color" style="border: 1px solid rgba(255, 255, 255, 0.2);"></div><span>Wall Ray</span></div>
+                    </div>
+                </div>
+                <div class="game-container">
+                    <h3 class="game-title">Population Overview (50 Snakes)</h3>
+                    <canvas id="populationCanvas" width="300" height="300"></canvas>
+                    <div class="legend">
+                        <div class="legend-item"><div class="legend-color" style="background: #4CAF50;"></div><span>Alive</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background: #f44336;"></div><span>Dead</span></div>
+                    </div>
+                </div>
+                <div class="game-container" style="grid-column: 1 / -1;">
+                    <h3 class="game-title">Learning Progress</h3>
+                    <canvas id="graphCanvas" width="620" height="150"></canvas>
+                    <div class="comparison-panel">
+                        <div class="stage-box" id="stage-early"><h4>Early Stage (Gen 1-20)</h4><p style="font-size: 0.85em; color: #888;">• Random movement<br>• Learning walls<br>• Score: 0-3</p></div>
+                        <div class="stage-box" id="stage-learning"><h4>Learning Stage (Gen 20-100)</h4><p style="font-size: 0.85em; color: #888;">• Finding food<br>• Basic pathfinding<br>• Score: 4-15</p></div>
+                        <div class="stage-box" id="stage-advanced"><h4>Advanced Stage (Gen 100+)</h4><p style="font-size: 0.85em; color: #888;">• Efficient hunting<br>• Self-avoidance<br>• Score: 20+</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="info-panel">
+                <h3 style="margin-bottom: 20px;">AI Brain Activity</h3>
+                <div class="metric"><div class="metric-label">Generation</div><div class="metric-value" id="generation">1</div></div>
+                <div class="metric"><div class="metric-label">Best Score Ever</div><div class="metric-value" id="bestScore">0</div></div>
+                <div class="metric"><div class="metric-label">Current Best</div><div class="metric-value" id="currentBest">0</div></div>
+                <div class="metric"><div class="metric-label">Alive Snakes</div><div class="metric-value" id="aliveCount">50/50</div></div>
+                <div class="metric"><div class="metric-label">Average Fitness</div><div class="metric-value" id="avgFitness">0</div></div>
+                <div class="ai-thoughts">
+                    <h4 style="margin-bottom: 10px;">Current AI Decisions:</h4>
+                    <p id="aiStatus">Waiting to start...</p>
+                    <div class="decision-display">
+                        <div class="decision-box" id="decUp"><div>↑</div><div style="font-size: 0.8em;" id="confUp">0%</div></div>
+                        <div class="decision-box" id="decRight"><div>→</div><div style="font-size: 0.8em;" id="confRight">0%</div></div>
+                        <div class="decision-box" id="decDown"><div>↓</div><div style="font-size: 0.8em;" id="confDown">0%</div></div>
+                        <div class="decision-box" id="decLeft"><div>←</div><div style="font-size: 0.8em;" id="confLeft">0%</div></div>
+                    </div>
+                </div>
+                <div class="neural-view">
+                    <h4 style="margin-bottom: 5px; color: #4CAF50;">Neural Network Activity</h4>
+                    <canvas id="neuralCanvas"></canvas>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                    <h4 style="margin-bottom: 10px; color: #4CAF50;">Enhanced Learning Features:</h4>
+                    <ol style="font-size: 0.85em; line-height: 1.8; padding-left: 20px;">
+                        <li>Improved vision with gradient food detection</li>
+                        <li>Better fitness function rewarding food approach</li>
+                        <li>Tournament selection for stronger evolution</li>
+                        <li>Adaptive mutation rates</li>
+                        <li>Enhanced input normalization</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        const INPUT_SIZE = 24; // 8 directions * 3 (wall, food, body)
+        const HIDDEN_SIZE = 20;
+        const OUTPUT_SIZE = 4;
+
+        class NeuralNetwork {
+            constructor(inputSize, hiddenSize, outputSize) {
+                this.inputSize = inputSize;
+                this.hiddenSize = hiddenSize;
+                this.outputSize = outputSize;
+                this.weightsIH = this.createMatrix(this.hiddenSize, this.inputSize);
+                this.weightsHO = this.createMatrix(this.outputSize, this.hiddenSize);
+                this.biasH = this.createMatrix(this.hiddenSize, 1);
+                this.biasO = this.createMatrix(this.outputSize, 1);
+                this.randomizeWeights();
+            }
+
+            createMatrix(rows, cols) {
+                return Array(rows).fill().map(() => Array(cols).fill(0));
+            }
+
+            randomizeWeights() {
+                // Xavier initialization for better initial weights
+                const limitIH = Math.sqrt(6 / (this.inputSize + this.hiddenSize));
+                const limitHO = Math.sqrt(6 / (this.hiddenSize + this.outputSize));
+                
+                for (let i = 0; i < this.hiddenSize; i++) {
+                    for (let j = 0; j < this.inputSize; j++) {
+                        this.weightsIH[i][j] = (Math.random() * 2 - 1) * limitIH;
+                    }
+                    this.biasH[i][0] = (Math.random() * 2 - 1) * limitIH;
+                }
+                for (let i = 0; i < this.outputSize; i++) {
+                    for (let j = 0; j < this.hiddenSize; j++) {
+                        this.weightsHO[i][j] = (Math.random() * 2 - 1) * limitHO;
+                    }
+                    this.biasO[i][0] = (Math.random() * 2 - 1) * limitHO;
+                }
+            }
+
+            predict(inputArray) {
+                const inputs = inputArray.map(x => [x]);
+                const hidden = this.multiply(this.weightsIH, inputs);
+                this.add(hidden, this.biasH);
+                this.activate(hidden);
+                const output = this.multiply(this.weightsHO, hidden);
+                this.add(output, this.biasO);
+                this.softmax(output);
+                
+                // Store activations for visualization
+                this.lastHidden = hidden.map(row => row[0]);
+                this.lastOutput = output.map(row => row[0]);
+                
+                return output.map(row => row[0]);
+            }
+
+            multiply(a, b) {
+                const result = this.createMatrix(a.length, b[0].length);
+                for (let i = 0; i < a.length; i++) {
+                    for (let j = 0; j < b[0].length; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < a[0].length; k++) {
+                            sum += a[i][k] * b[k][j];
+                        }
+                        result[i][j] = sum;
+                    }
+                }
+                return result;
+            }
+
+            add(a, b) {
+                for (let i = 0; i < a.length; i++) {
+                    for (let j = 0; j < a[0].length; j++) {
+                        a[i][j] += b[i][j];
+                    }
+                }
+            }
+
+            activate(matrix) {
+                // Leaky ReLU for better gradient flow
+                for (let i = 0; i < matrix.length; i++) {
+                    for (let j = 0; j < matrix[0].length; j++) {
+                        matrix[i][j] = matrix[i][j] > 0 ? matrix[i][j] : 0.01 * matrix[i][j];
+                    }
+                }
+            }
+
+            softmax(matrix) {
+                const max = Math.max(...matrix.map(r => r[0]));
+                const sum = matrix.reduce((acc, r) => acc + Math.exp(r[0] - max), 0);
+                for (let i = 0; i < matrix.length; i++) {
+                    matrix[i][0] = Math.exp(matrix[i][0] - max) / sum;
+                }
+            }
+
+            copy() {
+                const nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize);
+                nn.weightsIH = this.weightsIH.map(r => [...r]);
+                nn.weightsHO = this.weightsHO.map(r => [...r]);
+                nn.biasH = this.biasH.map(r => [...r]);
+                nn.biasO = this.biasO.map(r => [...r]);
+                return nn;
+            }
+
+            mutate(rate, generation) {
+                // Adaptive mutation based on generation
+                const mutationStrength = Math.max(0.05, 0.2 * Math.exp(-generation / 50));
+                
+                const mutateValue = val => {
+                    if (Math.random() < rate) {
+                        // Add Gaussian noise
+                        const noise = (Math.random() * 2 - 1) * mutationStrength;
+                        return val + noise;
+                    }
+                    return val;
+                };
+                
+                for (let i = 0; i < this.hiddenSize; i++) {
+                    for (let j = 0; j < this.inputSize; j++) {
+                        this.weightsIH[i][j] = mutateValue(this.weightsIH[i][j]);
+                    }
+                    this.biasH[i][0] = mutateValue(this.biasH[i][0]);
+                }
+                for (let i = 0; i < this.outputSize; i++) {
+                    for (let j = 0; j < this.hiddenSize; j++) {
+                        this.weightsHO[i][j] = mutateValue(this.weightsHO[i][j]);
+                    }
+                    this.biasO[i][0] = mutateValue(this.biasO[i][0]);
+                }
+            }
+
+            crossover(partner) {
+                const child = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize);
+                
+                // Uniform crossover
+                const cross = (m1, m2) => m1.map((r, i) => r.map((v, j) => Math.random() < 0.5 ? v : m2[i][j]));
+                
+                child.weightsIH = cross(this.weightsIH, partner.weightsIH);
+                child.weightsHO = cross(this.weightsHO, partner.weightsHO);
+                child.biasH = cross(this.biasH, partner.biasH);
+                child.biasO = cross(this.biasO, partner.biasO);
+                
+                return child;
+            }
+        }
+
+        class Snake {
+            constructor(gridSize, brain) {
+                this.gridSize = gridSize;
+                this.brain = brain || new NeuralNetwork(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE);
+                this.reset();
+            }
+
+            reset() {
+                this.body = [{ x: Math.floor(this.gridSize / 2), y: Math.floor(this.gridSize / 2) }];
+                this.direction = { x: 1, y: 0 };
+                this.score = 0;
+                this.alive = true;
+                this.fitness = 0;
+                this.lifeTime = 0;
+                this.stepsWithoutFood = 0;
+                this.lastOutputs = [0, 0, 0, 0];
+                this.visionRays = [];
+                this.closestFoodDistance = Infinity;
+                this.totalDistanceToFood = 0;
+                this.stepsTowardFood = 0;
+            }
+
+            move() {
+                if (!this.alive) return;
+                
+                const head = { x: this.body[0].x + this.direction.x, y: this.body[0].y + this.direction.y };
+                
+                // Check death conditions
+                if (head.x < 0 || head.x >= this.gridSize || head.y < 0 || head.y >= this.gridSize || 
+                    this.body.some(s => s.x === head.x && s.y === head.y)) {
+                    this.alive = false;
+                    return;
+                }
+                
+                this.body.unshift(head);
+                
+                // Track distance to food for fitness
+                const distToFood = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                this.totalDistanceToFood += distToFood;
+                
+                if (distToFood < this.closestFoodDistance) {
+                    this.closestFoodDistance = distToFood;
+                    this.stepsTowardFood++;
+                }
+                
+                if (head.x === food.x && head.y === food.y) {
+                    this.score++;
+                    this.stepsWithoutFood = 0;
+                    this.closestFoodDistance = Infinity;
+                    generateFood();
+                } else {
+                    this.body.pop();
+                }
+                
+                this.lifeTime++;
+                this.stepsWithoutFood++;
+                
+                // More generous step limit that scales with score
+                const stepLimit = 100 + (this.score * 50);
+                if (this.stepsWithoutFood > stepLimit) {
+                    this.alive = false;
+                }
+            }
+
+            think() {
+                if (!this.alive) return;
+                
+                const inputs = this.getInputs();
+                this.lastOutputs = this.brain.predict(inputs);
+                
+                // Get the direction with highest activation
+                const maxIndex = this.lastOutputs.indexOf(Math.max(...this.lastOutputs));
+                const directions = [
+                    {x: 0, y: -1},  // Up
+                    {x: 1, y: 0},   // Right
+                    {x: 0, y: 1},   // Down
+                    {x: -1, y: 0}   // Left
+                ];
+                
+                // Prevent immediate 180-degree turns
+                const newDir = directions[maxIndex];
+                if (!(newDir.x === -this.direction.x && newDir.y === -this.direction.y)) {
+                    this.direction = newDir;
+                }
+            }
+
+            getInputs() {
+                this.visionRays = [];
+                const inputs = [];
+                const head = this.body[0];
+                
+                // 8 vision directions
+                const visionDirections = [
+                    {x: 0, y: -1},   // N
+                    {x: 1, y: -1},   // NE
+                    {x: 1, y: 0},    // E
+                    {x: 1, y: 1},    // SE
+                    {x: 0, y: 1},    // S
+                    {x: -1, y: 1},   // SW
+                    {x: -1, y: 0},   // W
+                    {x: -1, y: -1}   // NW
+                ];
+                
+                for (const dir of visionDirections) {
+                    let wallDist = 0, foodDist = 0, bodyDist = 0;
+                    let pos = { ...head };
+                    let distance = 0;
+                    
+                    // Cast ray until hitting something
+                    while (distance < this.gridSize * 1.5) {
+                        pos.x += dir.x;
+                        pos.y += dir.y;
+                        distance++;
+                        
+                        // Check wall
+                        if (pos.x < 0 || pos.x >= this.gridSize || pos.y < 0 || pos.y >= this.gridSize) {
+                            wallDist = 1 / distance;
+                            this.visionRays.push({ start: head, end: pos, type: 'wall' });
+                            break;
+                        }
+                        
+                        // Check food - use gradient instead of binary
+                        if (pos.x === food.x && pos.y === food.y) {
+                            foodDist = 1 - (distance / this.gridSize); // Stronger signal for closer food
+                            this.visionRays.push({ start: head, end: pos, type: 'food' });
+                        }
+                        
+                        // Check body
+                        if (this.body.slice(1).some(s => s.x === pos.x && s.y === pos.y)) {
+                            if (bodyDist === 0) { // Only record first body segment hit
+                                bodyDist = 1 / distance;
+                                this.visionRays.push({ start: head, end: pos, type: 'body' });
+                            }
+                        }
+                    }
+                    
+                    // Normalize all inputs to [0, 1]
+                    inputs.push(wallDist, foodDist, bodyDist);
+                }
+                
+                return inputs;
+            }
+
+            calculateFitness() {
+                // Multi-objective fitness function
+                const scoreFitness = Math.pow(this.score, 2.2) * 5000;
+                const survivalFitness = this.lifeTime * 0.5;
+                const explorationFitness = this.stepsTowardFood * 2;
+                const efficiencyPenalty = this.lifeTime > 0 ? -(this.totalDistanceToFood / this.lifeTime) * 10 : 0;
+                
+                this.fitness = Math.max(1, scoreFitness + survivalFitness + explorationFitness + efficiencyPenalty);
+            }
+
+            copy() {
+                const newSnake = new Snake(this.gridSize, this.brain.copy());
+                return newSnake;
+            }
+        }
+
+        // Canvas setup
+        const bestCanvas = document.getElementById('bestCanvas');
+        const bestCtx = bestCanvas.getContext('2d');
+        const populationCanvas = document.getElementById('populationCanvas');
+        const popCtx = populationCanvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        const neuralCanvas = document.getElementById('neuralCanvas');
+        const neuralCtx = neuralCanvas.getContext('2d');
+
+        const gridSize = 15;
+        const cellSize = bestCanvas.width / gridSize;
+        const populationSize = 50;
+
+        let food = {};
+        let population = [];
+        let generation = 1;
+        let bestScore = 0;
+        let bestSnakeEver = null;
+        let isRunning = false;
+        let generationHistory = [];
+        let lastTimestamp = 0;
+        let frameInterval = 1000 / 30;
+
+        const init = () => {
+            population = Array(populationSize).fill().map(() => new Snake(gridSize));
+            generateFood();
+            population.forEach(s => s.think());
+        };
+
+        const generateFood = () => {
+            const occupiedPositions = new Set();
+            population.forEach(snake => {
+                if (snake.alive) {
+                    snake.body.forEach(seg => {
+                        occupiedPositions.add(`${seg.x},${seg.y}`);
+                    });
+                }
+            });
+            
+            do {
+                food = {
+                    x: Math.floor(Math.random() * gridSize),
+                    y: Math.floor(Math.random() * gridSize)
+                };
+            } while (occupiedPositions.has(`${food.x},${food.y}`));
+        };
+
+        const drawBestSnake = () => {
+            bestCtx.fillStyle = '#111';
+            bestCtx.fillRect(0, 0, bestCanvas.width, bestCanvas.height);
+            
+            // Find best alive snake or use best ever
+            let bestSnake = population.filter(s => s.alive).sort((a, b) => b.score - a.score)[0] || bestSnakeEver;
+            if (!bestSnake) return;
+
+            // Draw vision rays
+            if (bestSnake.visionRays) {
+                bestSnake.visionRays.forEach(ray => {
+                    let color = 'rgba(255, 255, 255, 0.2)';
+                    let lineWidth = 1;
+                    
+                    if (ray.type === 'food') {
+                        color = 'rgba(255, 82, 82, 0.8)';
+                        lineWidth = 2;
+                    } else if (ray.type === 'body') {
+                        color = 'rgba(255, 255, 0, 0.5)';
+                    }
+                    
+                    bestCtx.strokeStyle = color;
+                    bestCtx.lineWidth = lineWidth;
+                    bestCtx.beginPath();
+                    bestCtx.moveTo(ray.start.x * cellSize + cellSize / 2, ray.start.y * cellSize + cellSize / 2);
+                    bestCtx.lineTo(ray.end.x * cellSize + cellSize / 2, ray.end.y * cellSize + cellSize / 2);
+                    bestCtx.stroke();
+                });
+            }
+
+            // Draw snake body
+            bestSnake.body.forEach((seg, i) => {
+                bestCtx.fillStyle = i === 0 ? '#66BB6A' : '#4CAF50';
+                bestCtx.fillRect(seg.x * cellSize + 1, seg.y * cellSize + 1, cellSize - 2, cellSize - 2);
+            });
+
+            // Draw food
+            bestCtx.fillStyle = '#FF5252';
+            bestCtx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+
+            // Update decision display
+            const directions = ['Up', 'Right', 'Down', 'Left'];
+            directions.forEach((dir, i) => {
+                const perc = Math.round(bestSnake.lastOutputs[i] * 100);
+                document.getElementById(`conf${dir}`).textContent = `${perc}%`;
+                document.getElementById(`dec${dir}`).classList.toggle('active', 
+                    bestSnake.lastOutputs[i] === Math.max(...bestSnake.lastOutputs));
+            });
+
+            // Update status
+            const status = bestSnake.alive 
+                ? `<strong>Snake #${population.indexOf(bestSnake) + 1}</strong> | Score: ${bestSnake.score} | Steps: ${bestSnake.lifeTime}`
+                : 'Generation complete';
+            document.getElementById('aiStatus').innerHTML = status;
+        };
+
+        const drawPopulation = () => {
+            popCtx.fillStyle = '#111';
+            popCtx.fillRect(0, 0, populationCanvas.width, populationCanvas.height);
+            
+            const cols = Math.ceil(Math.sqrt(populationSize));
+            const miniSize = populationCanvas.width / cols;
+            
+            population.forEach((snake, i) => {
+                if (snake.body.length > 0) {
+                    const x = (i % cols) * miniSize;
+                    const y = Math.floor(i / cols) * miniSize;
+                    
+                    // Draw mini grid
+                    popCtx.strokeStyle = '#222';
+                    popCtx.strokeRect(x, y, miniSize, miniSize);
+                    
+                    // Draw snake
+                    snake.body.forEach((seg, j) => {
+                        const sx = x + (seg.x / gridSize) * miniSize;
+                        const sy = y + (seg.y / gridSize) * miniSize;
+                        const size = miniSize / gridSize;
+                        
+                        popCtx.fillStyle = snake.alive 
+                            ? (j === 0 ? '#66BB6A' : '#4CAF50')
+                            : '#f44336';
+                        popCtx.fillRect(sx, sy, size - 1, size - 1);
+                    });
+                    
+                    // Draw food in mini view
+                    const fx = x + (food.x / gridSize) * miniSize;
+                    const fy = y + (food.y / gridSize) * miniSize;
+                    popCtx.fillStyle = '#FF5252';
+                    popCtx.fillRect(fx, fy, miniSize / gridSize, miniSize / gridSize);
+                }
+            });
+        };
+
+        const drawGraph = () => {
+            graphCtx.fillStyle = '#0a0a0a';
+            graphCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+            
+            if (generationHistory.length < 2) return;
+            
+            const padding = 30;
+            const graphWidth = graphCanvas.width - padding * 2;
+            const graphHeight = graphCanvas.height - padding * 2;
+            
+            const maxScore = Math.max(1, ...generationHistory.map(g => g.best));
+            const maxAvg = Math.max(1, ...generationHistory.map(g => g.avg));
+            const maxY = Math.max(maxScore, maxAvg * 2);
+            
+            // Draw grid
+            graphCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            graphCtx.font = '10px monospace';
+            graphCtx.fillStyle = '#888';
+            
+            // Y-axis labels
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (i / 5) * graphHeight;
+                const score = Math.round(maxY * (1 - i / 5));
+                
+                graphCtx.beginPath();
+                graphCtx.moveTo(padding, y);
+                graphCtx.lineTo(graphCanvas.width - padding, y);
+                graphCtx.stroke();
+                
+                graphCtx.fillText(score.toString(), 5, y + 3);
+            }
+            
+            // X-axis labels
+            const xStep = Math.max(1, Math.floor(generationHistory.length / 10));
+            for (let i = 0; i < generationHistory.length; i += xStep) {
+                const x = padding + (i / (generationHistory.length - 1)) * graphWidth;
+                graphCtx.fillText(i.toString(), x - 5, graphCanvas.height - 5);
+            }
+            
+            // Draw lines
+            const drawLine = (data, color, lineWidth = 2) => {
+                graphCtx.strokeStyle = color;
+                graphCtx.lineWidth = lineWidth;
+                graphCtx.beginPath();
+                
+                data.forEach((value, i) => {
+                    const x = padding + (i / (data.length - 1)) * graphWidth;
+                    const y = padding + (1 - value / maxY) * graphHeight;
+                    
+                    if (i === 0) graphCtx.moveTo(x, y);
+                    else graphCtx.lineTo(x, y);
+                });
+                
+                graphCtx.stroke();
+            };
+            
+            drawLine(generationHistory.map(g => g.avg), '#2196F3');
+            drawLine(generationHistory.map(g => g.best), '#4CAF50', 3);
+            
+            // Legend
+            graphCtx.fillStyle = '#2196F3';
+            graphCtx.fillText('Average', graphCanvas.width - 100, 20);
+            graphCtx.fillStyle = '#4CAF50';
+            graphCtx.fillText('Best', graphCanvas.width - 100, 35);
+        };
+
+        const drawNeuralNetwork = (brain) => {
+            const width = neuralCanvas.width;
+            const height = neuralCanvas.height;
+            neuralCtx.fillStyle = '#111';
+            neuralCtx.fillRect(0, 0, width, height);
+            
+            if (!brain || !brain.lastHidden) return;
+            
+            // Draw connections with varying opacity based on weight strength
+            const inputY = 20;
+            const hiddenY = 60;
+            const outputY = 100;
+            const inputSpacing = width / (INPUT_SIZE + 1);
+            const hiddenSpacing = width / (HIDDEN_SIZE + 1);
+            const outputSpacing = width / (OUTPUT_SIZE + 1);
+            
+            // Draw nodes
+            const drawNode = (x, y, value, color) => {
+                const radius = 4 + Math.abs(value) * 3;
+                neuralCtx.fillStyle = color;
+                neuralCtx.beginPath();
+                neuralCtx.arc(x, y, radius, 0, Math.PI * 2);
+                neuralCtx.fill();
+            };
+            
+            // Draw hidden layer
+            brain.lastHidden.forEach((value, i) => {
+                const x = (i + 1) * hiddenSpacing;
+                const intensity = Math.min(255, Math.abs(value) * 100);
+                drawNode(x, hiddenY, value, `rgb(76, ${175 - intensity/2}, 80)`);
+            });
+            
+            // Draw output layer
+            brain.lastOutput.forEach((value, i) => {
+                const x = (i + 1) * outputSpacing;
+                const intensity = Math.min(255, value * 255);
+                drawNode(x, outputY, value, `rgb(${intensity}, ${intensity}, 80)`);
+            });
+        };
+
+        const updateDisplays = () => {
+            drawBestSnake();
+            drawPopulation();
+            drawGraph();
+            
+            // Update best snake's neural network
+            const bestAlive = population.filter(s => s.alive).sort((a, b) => b.score - a.score)[0];
+            if (bestAlive && bestAlive.brain) {
+                drawNeuralNetwork(bestAlive.brain);
+            }
+            
+            document.getElementById('generation').textContent = generation;
+            document.getElementById('bestScore').textContent = bestScore;
+            document.getElementById('currentBest').textContent = Math.max(...population.map(s => s.score));
+            const aliveCount = population.filter(s => s.alive).length;
+            document.getElementById('aliveCount').textContent = `${aliveCount}/${populationSize}`;
+            
+            const avgFitness = population.reduce((sum, snake) => sum + snake.fitness, 0) / populationSize;
+            document.getElementById('avgFitness').textContent = Math.round(avgFitness);
+            
+            // Update stage indicators
+            ['early', 'learning', 'advanced'].forEach(stage => {
+                document.getElementById(`stage-${stage}`).classList.remove('active-stage');
+            });
+            
+            let stage = 'early';
+            if (generation > 20) stage = 'learning';
+            if (generation > 100 || bestScore > 20) stage = 'advanced';
+            document.getElementById(`stage-${stage}`).classList.add('active-stage');
+        };
+
+        const tournamentSelection = (population, tournamentSize = 5) => {
+            const tournament = [];
+            for (let i = 0; i < tournamentSize; i++) {
+                tournament.push(population[Math.floor(Math.random() * population.length)]);
+            }
+            return tournament.sort((a, b) => b.fitness - a.fitness)[0];
+        };
+
+        const nextGeneration = () => {
+            // Calculate fitness for all snakes
+            population.forEach(s => s.calculateFitness());
+            
+            // Sort by fitness
+            population.sort((a, b) => b.fitness - a.fitness);
+            
+            // Record history
+            const avgScore = population.reduce((sum, s) => sum + s.score, 0) / populationSize;
+            generationHistory.push({
+                best: population[0].score,
+                avg: avgScore
+            });
+            
+            // Update best score
+            if (population[0].score > bestScore) {
+                bestScore = population[0].score;
+                bestSnakeEver = population[0].copy();
+            }
+            
+            // Create new population
+            const newPopulation = [];
+            
+            // Elitism - keep top 4 snakes
+            for (let i = 0; i < 4; i++) {
+                newPopulation.push(new Snake(gridSize, population[i].brain.copy()));
+            }
+            
+            // Fill rest with offspring
+            while (newPopulation.length < populationSize) {
+                // Tournament selection
+                const parent1 = tournamentSelection(population);
+                const parent2 = tournamentSelection(population);
+                
+                // Crossover
+                const childBrain = parent1.brain.crossover(parent2.brain);
+                
+                // Adaptive mutation
+                const mutationRate = 0.1 + (0.2 * Math.exp(-generation / 30));
+                childBrain.mutate(mutationRate, generation);
+                
+                newPopulation.push(new Snake(gridSize, childBrain));
+            }
+            
+            population = newPopulation;
+            generation++;
+            generateFood();
+            
+            // Initial thinking for all snakes
+            population.forEach(s => s.think());
+        };
+
+        const gameLoop = (timestamp) => {
+            if (!isRunning) return;
+            
+            requestAnimationFrame(gameLoop);
+            
+            const elapsed = timestamp - lastTimestamp;
+            if (elapsed > frameInterval) {
+                lastTimestamp = timestamp - (elapsed % frameInterval);
+                
+                let allDead = true;
+                population.forEach(snake => {
+                    if (snake.alive) {
+                        snake.move();
+                        snake.think();
+                        allDead = false;
+                    }
+                });
+                
+                if (allDead) {
+                    nextGeneration();
+                }
+                
+                updateDisplays();
+            }
+        };
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            lastTimestamp = performance.now();
+            requestAnimationFrame(gameLoop);
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isRunning = !isRunning;
+            document.getElementById('pauseBtn').textContent = isRunning ? 'Pause' : 'Resume';
+            if (isRunning) {
+                lastTimestamp = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            isRunning = false;
+            generation = 1;
+            bestScore = 0;
+            bestSnakeEver = null;
+            generationHistory = [];
+            init();
+            updateDisplays();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'Pause';
+        });
+
+        document.getElementById('skipBtn').addEventListener('click', () => {
+            if (isRunning) {
+                population.forEach(s => s.alive = false);
+            }
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            const fps = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = fps;
+            frameInterval = 1000 / fps;
+        });
+
+        // Initialize
+        init();
+        updateDisplays();
+    })();
+    </script>
+</body>
+</html>
